@@ -1,0 +1,25 @@
+name: mkcert
+version: 0.1.0
+
+authors:
+  - Kevin <root@unixs.org>
+
+targets:
+  mkcert:
+    main: src/mkcert.cr
+
+crystal: 0.29.0
+
+license: MIT
+
+dependencies:
+  commander:
+    github: mrrooijen/commander
+    version: ~> 0.3.3
+  ipaddress:
+    github: sija/ipaddress.cr
+    branch: master
+  openssl_ext:
+    github: crystal-extras/openssl_ext
+    branch: master
+

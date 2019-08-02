@@ -1,0 +1,14 @@
+version: 1.0
+shards:
+  commander:
+    github: mrrooijen/commander
+    version: 0.3.3
+
+  ipaddress:
+    github: sija/ipaddress.cr
+    commit: 37d08ea02c86c3565f3787a02434560e9ed102ef
+
+  openssl_ext:
+    github: crystal-extras/openssl_ext
+    commit: 3a9160e2810a017caecdb9859e0edad9ccdae13e
+
