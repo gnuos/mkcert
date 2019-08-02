@@ -31,10 +31,12 @@ $ shards build
 
 ## Usage
 
-```
-mkcert -h
+编译后的程序在 ./bin 目录里面，执行 `./bin/mkcert` 命令如果不带参数，就会输出帮助说明。签发证书默认使用的是ECC算法，执行下面的命令会在当前目录生成证书和私钥：
 
-$ 
+mkcert 工具默认生成SAN证书，可以允许域名、IP地址、Email地址混合使用，生成的证书可以用于多种用途。mkcert 命令后面的每个名称用空格隔开，通配符需要用双引号或单引号。
+
+```
+$ ./bin/mkcert github.com "*.github.com"
 
 ```
 
