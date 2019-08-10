@@ -12,6 +12,8 @@ module Mkcert
         cert.subject = name
         cert.issuer = name
         cert.public_key = priv_key.public_key
+        cert.public_key = priv_key if priv_key.is_a?(OpenSSL::EC)
+
         cert.not_before = OpenSSL::ASN1::Time.days_from_now(0)
         cert.not_after = OpenSSL::ASN1::Time.days_from_now(days)
 

@@ -27,7 +27,7 @@ module Mkcert
           flag.name = "ecc"
           flag.short = "-e"
           flag.long = "--ecc"
-          flag.default = true
+          flag.default = false
           flag.description = "Generate a certificate with an ECC key."
         end
 
@@ -74,7 +74,7 @@ module Mkcert
             exit
           end
 
-          if options.bool["rsa"] || options.bool["ecc"] || options.bool["client"]
+          if options.bool["rsa"] || options.bool["ecc"]
             if options.bool["rsa"] && options.bool["ecc"]
               LOG.error "Can only specity one between rsa and ecc"
               exit(1)

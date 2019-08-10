@@ -6,7 +6,7 @@ shards:
 
   ipaddress:
     github: sija/ipaddress.cr
-    commit: 37d08ea02c86c3565f3787a02434560e9ed102ef
+    commit: 624a8f7d356099e8617f90cd20b8333fbcf11617
 
   openssl_ext:
     github: crystal-extras/openssl_ext

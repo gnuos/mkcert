@@ -1,6 +1,6 @@
 module Mkcert
-  ROOT_CERT_NAME = "rootCA_cert.pem"
-  ROOT_KEY_NAME  = "rootCA_key.pem"
+  ROOT_CERT_NAME = "rootCA.pem"
+  ROOT_KEY_NAME  = "rootCA-key.pem"
 
   enum KeyType : UInt8
     RSA
@@ -42,6 +42,7 @@ module Mkcert
 
         priv_key = generate_key
         pub_key = priv_key.public_key
+        pub_key = priv_key if @key_type == KeyType::ECC
 
         cert = generate_cert
         cert.public_key = pub_key
@@ -113,6 +114,12 @@ module Mkcert
       name = OpenSSL::X509::Name.new
       name.add_entry "O", "mkcert development certificate"
       name.add_entry "OU", ENV["USER"] + "@" + System.hostname
+
+      if @dns_addr.size > 0
+        name.add_entry "CN", @dns_addr[0]
+      elsif @ip_addr.size > 0
+        name.add_entry "CN", @ip_addr[0]
+      end
 
       cert = OpenSSL::X509::Certificate.new
       cert.subject = name
