@@ -1,6 +1,6 @@
 module Mkcert
   class CaCert < OpenSSL::X509::Certificate
-    def self.new(priv_key : OpenSSL::PKey, days : Int32 = 365 * 10)
+    def self.new(priv_key : OpenSSL::PKey::PKey, days : Int32 = 365 * 10)
       raise "failed to generate CA certificate" unless priv_key
 
       new.tap do |cert|
@@ -12,7 +12,7 @@ module Mkcert
         cert.subject = name
         cert.issuer = name
         cert.public_key = priv_key.public_key
-        cert.public_key = priv_key if priv_key.is_a?(OpenSSL::EC)
+        cert.public_key = priv_key if priv_key.is_a?(OpenSSL::PKey::EC)
 
         cert.not_before = OpenSSL::ASN1::Time.days_from_now(0)
         cert.not_after = OpenSSL::ASN1::Time.days_from_now(days)
@@ -21,11 +21,11 @@ module Mkcert
         ef.subject_certificate = cert
         ef.issuer_certificate = cert
 
-        cert.add_extension(ef.create_extension("basicConstraints", "CA:TRUE", true))
+        cert.add_extension(ef.create_extension("basicConstraints", "CA:TRUE, pathlen:0", true))
         cert.add_extension(ef.create_extension("keyUsage", "digitalSignature, keyCertSign, cRLSign", true))
         cert.add_extension(ef.create_extension("extendedKeyUsage", "serverAuth, clientAuth, emailProtection, codeSigning, timeStamping", true))
         cert.add_extension(ef.create_extension("subjectKeyIdentifier", "hash", false))
-        cert.add_extension(ef.create_extension("authorityKeyIdentifier", "keyid:always", false))
+        cert.add_extension(ef.create_extension("authorityKeyIdentifier", "keyid:always, issuer", false))
 
         cert.sign(priv_key, OpenSSL::Digest::SHA256.new)
       end

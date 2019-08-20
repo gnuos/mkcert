@@ -10,5 +10,5 @@ shards:
 
   openssl_ext:
     github: crystal-extras/openssl_ext
-    commit: 3a9160e2810a017caecdb9859e0edad9ccdae13e
+    commit: 47778f8ce761be1d1ad0f7b671401929d7f75d45
 

@@ -14,8 +14,8 @@ module Mkcert
     property rootca_dir : String
     property root_cert : String
     property root_key : String
-    property ca_cert : OpenSSL::X509::Certificate | Nil
-    property ca_key : OpenSSL::PKey | Nil
+    property ca_cert : OpenSSL::X509::Certificate
+    property ca_key : OpenSSL::PKey::PKey
 
     def initialize(@address : Array(String), @key_type : KeyType, @is_client : Bool,
                    @cert_file : String = "", @key_file : String = "")
@@ -26,7 +26,7 @@ module Mkcert
       @ip_addr = @email_addr = @dns_addr = [] of String
 
       @ca_cert = uninitialized OpenSSL::X509::Certificate
-      @ca_key = uninitialized OpenSSL::PKey
+      @ca_key = uninitialized OpenSSL::PKey::PKey
     end
 
     def generate
@@ -37,9 +37,22 @@ module Mkcert
 
       begin
         Dir.mkdir_p(@rootca_dir, 0o755)
+
         load_rootca
         parse_san_addr
 
+        san_list = [] of String
+        san_list = @ip_addr.map { |ip| "IP:#{ip}" } +
+                   @dns_addr.map { |dns| "DNS:#{dns}" } +
+                   @email_addr.map { |email| "email:#{email}" }
+
+        ext_usage = ["serverAuth", "clientAuth"]
+        unless @is_client
+          ext_usage << "codeSigning"
+          ext_usage << "emailProtection" if @email_addr.size > 0
+        end
+
+        @is_rootca = false
         priv_key = generate_key
         pub_key = priv_key.public_key
         pub_key = priv_key if @key_type == KeyType::ECC
@@ -49,29 +62,15 @@ module Mkcert
 
         ef = OpenSSL::X509::ExtensionFactory.new
         ef.subject_certificate = cert
-        ef.issuer_certificate = @ca_cert.as(typeof(cert))
+        ef.issuer_certificate = @ca_cert
 
-        cert.add_extension(ef.create_extension("basicConstraints", "CA:FALSE", true))
         cert.add_extension(ef.create_extension("keyUsage", "digitalSignature, keyEncipherment", true))
-
-        ext_usage = [] of String
-
-        if @is_client
-          ext_usage = ["serverAuth", "clientAuth"]
-        elsif @ip_addr.size > 0 || @dns_addr.size > 0
-          ext_usage = ["serverAuth"]
-        end
-        ext_usage.push "codeSigning", "emailProtection" if @email_addr.size > 0
-
         cert.add_extension(ef.create_extension("extendedKeyUsage", ext_usage.join(","), false))
-        cert.add_extension(ef.create_extension("authorityKeyIdentifier", "keyid:always", false))
-
-        san_list = [] of String
-        san_list = @ip_addr.map { |ip| "IP:#{ip}" } + @dns_addr.map { |dns| "DNS:#{dns}" } + @email_addr.map { |email| "email:#{email}" }
-
+        cert.add_extension(ef.create_extension("subjectKeyIdentifier", "hash", false))
+        cert.add_extension(ef.create_extension("authorityKeyIdentifier", "keyid:always, issuer", false))
         cert.add_extension(ef.create_extension("subjectAltName", san_list.join(","), true))
 
-        cert.sign(priv_key, OpenSSL::Digest::SHA256.new)
+        cert.sign(@ca_key, OpenSSL::Digest::SHA256.new)
 
         filename = default_name
         @cert_file = "./#{filename}.pem" if @cert_file.empty?
@@ -100,14 +99,14 @@ module Mkcert
       end
     end
 
-    private def generate_key : OpenSSL::PKey
+    private def generate_key : OpenSSL::PKey::PKey
       if @key_type == KeyType::ECC
-        return OpenSSL::EC.new(256)
+        return OpenSSL::PKey::EC.new(256)
       end
       if @is_rootca
-        return OpenSSL::RSA.new(3072)
+        return OpenSSL::PKey::RSA.new(3072)
       end
-      OpenSSL::RSA.new(2048)
+      OpenSSL::PKey::RSA.new(2048)
     end
 
     private def generate_cert : OpenSSL::X509::Certificate
@@ -187,15 +186,15 @@ module Mkcert
     end
 
     private def load_rootca
-      if !File.exists?(@root_cert) || !File.exists?(@root_key)
+      unless File.exists?(@root_cert) || File.exists?(@root_key)
         new_rootca
-      else
-        LOG.info("Using the local CA at \"#{@rootca_dir}\"")
       end
 
       begin
         @ca_cert = OpenSSL::X509::Certificate.new(File.read(@root_cert))
-        @ca_key = OpenSSL.parse_pkey(File.read(@root_key))
+        @ca_key = OpenSSL::PKey.read(File.read(@root_key))
+
+        LOG.info("Using the local CA at \"#{@rootca_dir}\"")
       rescue ex
         raise ex
       end

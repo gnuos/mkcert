@@ -74,29 +74,32 @@ module Mkcert
             exit
           end
 
-          if options.bool["rsa"] || options.bool["ecc"]
-            if options.bool["rsa"] && options.bool["ecc"]
-              LOG.error "Can only specity one between rsa and ecc"
-              exit(1)
-            end
-
-            if arguments.size == 0
-              puts cmd.help
-              exit
-            end
-
-            key_type = KeyType.new 0
-
-            if options.bool["rsa"]
-              key_type = KeyType::RSA
-            elsif options.bool["ecc"]
-              key_type = KeyType::ECC
-            end
-
-            cert_pair = CertPair.new(arguments, key_type, options.bool["client"],
-              options.string["cert-file"], options.string["key-file"])
-            cert_pair.generate
+          if !options.bool["rsa"] && !options.bool["ecc"]
+            puts cmd.help
+            exit 1
           end
+
+          if options.bool["rsa"] && options.bool["ecc"]
+            LOG.error "Can only specity one between rsa and ecc"
+            exit(1)
+          end
+
+          if arguments.size == 0
+            puts cmd.help
+            exit
+          end
+
+          key_type = KeyType.new 0
+
+          if options.bool["rsa"]
+            key_type = KeyType::RSA
+          elsif options.bool["ecc"]
+            key_type = KeyType::ECC
+          end
+
+          cert_pair = CertPair.new(arguments, key_type, options.bool["client"],
+            options.string["cert-file"], options.string["key-file"])
+          cert_pair.generate
         end
       end
       Commander.run(cli, ARGV)
